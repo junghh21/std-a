@@ -1,0 +1,37 @@
+name: build-image
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [rebuild-image-std-a]
+  schedule:
+    - cron: '23 3 * * 1'
+permissions:
+  contents: read
+  packages: write
+concurrency:
+  group: build-image
+  cancel-in-progress: false
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Fetch dependency manifest from private source (read-only deploy key)
+        env:
+          KEY: ${{ secrets.SRC_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh && umask 077 && printf '%s\n' "$KEY" > ~/.ssh/id
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/id -o IdentitiesOnly=yes" git clone --depth 1 git@github.com:junghh21/std-a-src.git src
+          rm -f ~/.ssh/id
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: src
+          push: true
+          tags: ghcr.io/junghh21/venv_std_a:latest
+          labels: org.opencontainers.image.source=https://github.com/junghh21/std-a
