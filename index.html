@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>std-a</title></head>
+<body><h1>std-a</h1><pre id="o">loading</pre>
+<script>
+fetch('data.json',{cache:'no-cache'}).then(r=>r.json()).then(d=>{
+  const age=(Date.now()-Date.parse(d.generated_at))/36e5;
+  document.getElementById('o').textContent=JSON.stringify(d,null,1)+(age>3?'\nSTALE '+age.toFixed(1)+'h':'');
+});
+</script></body></html>

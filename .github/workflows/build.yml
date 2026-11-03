@@ -1,0 +1,58 @@
+name: build-site
+on:
+  schedule:
+    - cron: '17 */3 * * *'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [deploy-std-a]
+permissions:
+  contents: read
+  packages: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: ghcr.io/junghh21/venv_std_a:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          path: ui
+      - name: Clone private source (read-only deploy key)
+        env:
+          KEY: ${{ secrets.SRC_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh && umask 077 && printf '%s\n' "$KEY" > ~/.ssh/id && chmod 600 ~/.ssh/id
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/id -o IdentitiesOnly=yes" git clone --depth 1 git@github.com:junghh21/std-a-src.git src
+          rm -f ~/.ssh/id
+      - name: Run backend
+        run: |
+          cd src && OUT=../site python main.py
+          cp ../ui/index.html ../site/
+          echo "src=$(git -C . rev-parse HEAD)" > ../site/build.txt
+      - name: Lint artifact
+        run: |
+          test -f site/index.html && test -f site/data.json
+          ! grep -rIiE 'nucbox|vault9|okkjc|192\.168' site
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
+        with:
+          path: site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment:
+      name: github-pages
+      url: ${{ steps.d.outputs.page_url }}
+    steps:
+      - id: d
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e
