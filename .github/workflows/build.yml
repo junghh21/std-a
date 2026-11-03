@@ -31,9 +31,9 @@ jobs:
           KEY: ${{ secrets.SRC_DEPLOY_KEY }}
         run: |
           mkdir -p ~/.ssh && umask 077 && printf '%s\n' "$KEY" > ~/.ssh/id && chmod 600 ~/.ssh/id
-          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
-          GIT_SSH_COMMAND="ssh -i ~/.ssh/id -o IdentitiesOnly=yes" git clone --depth 1 git@github.com:junghh21/std-a-src.git src
-          rm -f ~/.ssh/id
+          python3 -c "import json,urllib.request as u;[print('github.com',k) for k in json.load(u.urlopen('https://api.github.com/meta'))['ssh_keys']]" > $HOME/.ssh/known_hosts
+          GIT_SSH_COMMAND="ssh -i $HOME/.ssh/id -o IdentitiesOnly=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o StrictHostKeyChecking=yes" git clone --depth 1 git@github.com:junghh21/std-a-src.git src
+          rm -f $HOME/.ssh/id
       - name: Run backend
         run: |
           cd src && OUT=../site python main.py
