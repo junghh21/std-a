@@ -33,5 +33,5 @@ jobs:
         with:
           context: src
           push: true
-          tags: ghcr.io/junghh21/venv_std_a:latest
+          tags: ghcr.io/junghh21/std-a-deps:latest
           labels: org.opencontainers.image.source=https://github.com/junghh21/std-a
