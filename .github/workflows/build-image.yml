@@ -24,7 +24,7 @@ jobs:
           python3 -c "import json,urllib.request as u;[print('github.com',k) for k in json.load(u.urlopen('https://api.github.com/meta'))['ssh_keys']]" > $HOME/.ssh/known_hosts
           GIT_SSH_COMMAND="ssh -i $HOME/.ssh/id -o IdentitiesOnly=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o StrictHostKeyChecking=yes" git clone --depth 1 git@github.com:junghh21/std-a-src.git src
           rm -f $HOME/.ssh/id
-      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
